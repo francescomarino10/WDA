@@ -1,17 +1,17 @@
-
 import re
 import pandas as pd
 from nltk.stem import WordNetLemmatizer
 import spacy
 import gensim
 from collections import Counter
-from sklearn.feature_extraction import DictVectorizer
+#from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 import joblib
+import funzioni_per_elaborazione_linguaggio as fel
 
 #funzioni per la pulizia del corpus
 def remove_link_menzione(doc):
@@ -112,19 +112,10 @@ def create_lsa_model(corpus):
   concetti=get_concettiLSA(lsa)
   return bigram_mdl,vectorizer,concetti
 
-#trova
-def post_adapter_lsa(post,vectorizer,bigram_mdl):
-    
-    sp = spacy.load('en_core_web_sm')
-    all_stopwords = sp.Defaults.stop_words
-
-    wnl = WordNetLemmatizer()
-
-
-def lda(post):
+def lda(corpus):
   parole_valore=[]
   concetti_LDA={}
-
+  post,_=clear_corpus(corpus)
   dictionary = gensim.corpora.Dictionary(post)
   corpus2 = [dictionary.doc2bow(text) for text in post]
 
@@ -132,7 +123,7 @@ def lda(post):
   corpus_tfidf = tfidf[corpus2]
 
   ldamodel = gensim.models.ldamodel.LdaModel(corpus_tfidf, num_topics=10, id2word=dictionary, passes=500)
-  
+  topics = ldamodel.print_topics(num_words=5)
 
   for idx,lista_t in topics:
     parole_valore=[]
@@ -171,7 +162,7 @@ def grafico_LDA(ldamodel,corpus2,dictionary):
 
   pyLDAvis.display(lda_display)
 
-def hdp(corpus2):
+def hdp(corpus2,dictionary):
   hdpmodel = gensim.models.HdpModel(corpus=corpus2, id2word=dictionary)
   hdptopics = hdpmodel.show_topics(formatted=False)
   return hdpmodel,hdptopics
@@ -215,7 +206,8 @@ def create_model_and_get_components_emotion(emotion_file,print_inf=False,save=Fa
   df=df[["sentiment","content"]]
   bigramLS_post,bigram_mdl=clear_corpus(df["content"])
   df["content"]=[Counter(tmp) for tmp in bigramLS_post]
-  vectorizer = DictVectorizer(sparse = True)
+  #vectorizer = DictVectorizer(sparse = True)
+  vectorizer = TfidfVectorizer()
   X_all=vectorizer.fit_transform(list(df["content"]))
   y_all=list(df["sentiment"])
   X_train, X_test, y_train, y_test = train_test_split(X_all, y_all, test_size = 0.2, random_state = 123)
@@ -226,33 +218,31 @@ def create_model_and_get_components_emotion(emotion_file,print_inf=False,save=Fa
     get_information_model_test(mnb,y_test,X_test)
   
   if save:
-    joblib.dump(mnb, 'mnb.pkl')
-    joblib.dump(vectorizer, 'vectorizer.pkl')
-    joblib.dump(bigram_mdl, 'bigram_mdl.pkl')
+    joblib.dump(mnb, 'model/mnb.pkl')
+    joblib.dump(vectorizer, 'model/vectorizer.pkl')
+    joblib.dump(bigram_mdl, 'model/bigram_mdl.pkl')
 
   return vectorizer,bigram_mdl,mnb
 
 def load_model_and_get_components_emotion():
   try:
-    vectorizer = joblib.load('vectorizer.pkl')
-    bigram_mdl = joblib.load('bigram_mdl.pkl')
-    mnb = joblib.load('mnb.pkl')
+    vectorizer = joblib.load('modelEmotion/vectorizer.pkl')
+    bigram_mdl = joblib.load('modelEmotion/bigram_mdl.pkl')
+    mnb = joblib.load('modelEmotion/mnb.pkl')
     return vectorizer,bigram_mdl,mnb
   except:
     return None,None,None
 
-def tweet_adapter(tweet,vectorizer,bigram_mdl):
-    lista_token = gensim.utils.tokenize(remove_link_menzione(tweet), lower=True)
-    
+def post_adapter(post,bigram_mdl,vectorizer=None):
     sp = spacy.load('en_core_web_sm')
     all_stopwords = sp.Defaults.stop_words
-
     wnl = WordNetLemmatizer()
+    lista_token = list(gensim.utils.tokenize(remove_link_menzione(fel.converti_emoji(fel.traduci(post))), lower=True))
     lemmatized_string=[wnl.lemmatize(words) for words in find_and_merge_not(lista_token,all_stopwords)]
-        
-    post=bigram_mdl[lemmatized_string]
-    return vectorizer.transform([Counter(post)])
+    post_clear = bigram_mdl[lemmatized_string]
+    return vectorizer.transform(post_clear) if vectorizer else post_clear
 
+################################
 def list_prob(tweet,vectorizer,bigram_mdl,model):
     tmp = model.predict_proba(tweet_adapter(tweet,vectorizer,bigram_mdl))
     tmp2=list(tmp[0])
