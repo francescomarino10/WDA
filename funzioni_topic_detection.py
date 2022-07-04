@@ -79,7 +79,7 @@ class LDAModel:
     return self.ldamodel.print_topic(massimo, topn=5)
   
   def print_topics(self,num_words=5):
-    return self.ldamodel.print_topics(num_words)
+    return self.ldamodel.print_topics(num_words=num_words)
   
   def grafico_LDA(self):
     pyLDAvis.enable_notebook()
@@ -112,4 +112,4 @@ class HDPModel:
     return self.hdpmodel.print_topic(massimo, topn=5)
   
   def print_topics(self,num_words=5):
-    return self.hdpmodel.print_topics(num_words)
+    return self.hdpmodel.print_topics(num_words=num_words)
