@@ -1,12 +1,14 @@
-from translate import Translator
-translator = Translator(from_lang="autodetect",to_lang="en")
+# from translate import Translator
+# translator = Translator(from_lang="autodetect",to_lang="en")
+import google_trans_new as gtn
+translator = gtn.google_translator()
 import spacy
 from spacy_langdetect import LanguageDetector
 from spacy.language import Language
 import emoji
 
 def traduci(text):
-    return translator.translate(text)
+    return text if get_lang_text(text)["language"]=="en" else translator.translate(text)
 
 def converti_emoji(text):
     return emoji.demojize(text)
