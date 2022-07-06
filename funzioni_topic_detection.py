@@ -1,3 +1,4 @@
+from psutil import net_io_counters
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 import gensim
@@ -14,13 +15,13 @@ class LSAModel:
   corpus : list of str
   num_topics : number of topics to be extracted
   """
-  def __init__(self,corpus,num_topics=10):
+  def __init__(self,corpus,num_topics=10,n_iter=300):
     post,self.bigram_mdl=fpt.clear_corpus(corpus)
     lemmatized_bigram_string=[' '.join(word) for word in post]
     self.vectorizer = TfidfVectorizer()
     M=self.vectorizer.fit_transform(lemmatized_bigram_string)
-    self.termini=self.vectorizer.get_feature_names()
-    self.lsa = TruncatedSVD(n_components=num_topics,n_iter=300)
+    self.termini=self.vectorizer.get_feature_names_out().tolist()
+    self.lsa = TruncatedSVD(n_components=num_topics,n_iter=n_iter)
     self.lsa.fit(M)
     self.concetti=self.print_topics()
   

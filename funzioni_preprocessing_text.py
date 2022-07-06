@@ -48,15 +48,16 @@ def clear_corpus(tweets):#return bigram
 
     return post,bigram_mdl
 
-def post_adapter(post,bigram_mdl,vectorizer=None):
+def post_adapter(post,bigram_mdl,vectorizer=None,traduci=False):
     allowed_postags=["NOUN", "ADJ", "VERB", "ADV","PROPN","PART"]
     nlp = spacy.load("en_core_web_sm", disable=["parser", "ner"])
 
     lemmatized_string=find_and_merge_not(\
         gensim.utils.simple_preprocess(\
             remove_link_menzione(\
-                " ".join([token.lemma_ for token in nlp(fel.converti_emoji(fel.traduci(post))) if token.pos_ in allowed_postags])), \
+                " ".join([token.lemma_ for token in nlp(fel.converti_emoji(fel.traduci(post) if traduci else post)) if token.pos_ in allowed_postags])), \
                         deacc=True))
 
     post_clear=bigram_mdl[lemmatized_string]
-    return vectorizer.transform([Counter(post_clear)]) if vectorizer else post_clear
+    lemmatized_bigram_string=' '.join(post_clear)
+    return vectorizer.transform([lemmatized_bigram_string]) if vectorizer else post_clear

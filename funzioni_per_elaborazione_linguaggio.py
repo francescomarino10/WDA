@@ -8,17 +8,21 @@ from spacy.language import Language
 import emoji
 
 def traduci(text):
-    return text if get_lang_text(text)["language"]=="en" else translator.translate(text)
+    return text if get_lang_text(text)=="english" else translator.translate(text)
 
 def converti_emoji(text):
     return emoji.demojize(text)
 
-def _get_lang_detector(nlp,name):
-      return LanguageDetector()
+# def _get_lang_detector(nlp,name):
+#       return LanguageDetector()
 
-nlp = spacy.load('en_core_web_sm')
-Language.factory("language_detector", func=_get_lang_detector)
-nlp.add_pipe('language_detector', last=True)
+# nlp = spacy.load('en_core_web_sm')
+# Language.factory("language_detector", func=_get_lang_detector)
+# nlp.add_pipe('language_detector', last=True)
+
+# def get_lang_text(text):
+#     return nlp(text)._.language
 
 def get_lang_text(text):
-    return nlp(text)._.language
+    return translator.detect(text)[1]
+

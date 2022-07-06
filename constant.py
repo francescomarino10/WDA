@@ -75,6 +75,7 @@ LANGUAGES = {
     'pl': 'polish',
     'pt': 'portuguese',
     'pa': 'punjabi',
+    'qu': 'ilocano',
     'ro': 'romanian',
     'ru': 'russian',
     'sm': 'samoan',
