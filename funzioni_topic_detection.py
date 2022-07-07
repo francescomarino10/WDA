@@ -64,7 +64,7 @@ class LSAModel:
     return [(concetto, self.concetti[concetto])
           for concetto, valore in punteggi_LSA.items() if valore != 0]
   
-  #Funzione che la coppia (concetto,lista di parole)
+  #Funzione che restituisce la coppia (concetto,lista di parole)
   #con il punteggio massimo
   def result_TopicLSAMax(self,post):
     post_clear = fpt.post_adapter(post,self.bigram_mdl)
@@ -81,29 +81,42 @@ class LDAModel:
   num_topics : number of topics to be extracted
   """
   def __init__(self,corpus,num_topics=10):
+    #Funzione che presi in input i dati per effettuare l'LDA
+    #procede con la pulizia del corpus
     post,self.bigram_mdl=fpt.clear_corpus(corpus)
+    #crea un dizionario che contine la mappatura di tutti i token del post per il loro id
     self.dictionary = gensim.corpora.Dictionary(post)
+    #converto le parole del dizionario nella sua rappresentazione bag-of-words: una lista di coppie (word_id, word_frequency)
     corpus2 = [self.dictionary.doc2bow(text) for text in post]
+    #trasformazione dei dati in un modello vettoriale di tipo TF-IDF
     tfidf = gensim.models.TfidfModel(corpus2)
     self.corpus_tfidf = tfidf[corpus2]
+    #Addestra un modello LDA sul corpus_tfidf precedentemente creato specificando il numero di topic che si vuole restituire 
     self.ldamodel = gensim.models.ldamodel.LdaModel(self.corpus_tfidf, num_topics, id2word=self.dictionary)
   
+  #funzione che restituisce tutti i topic relativi al post dato in input come una lista di coppie (topic_id, topic_probability) 
   def result_TopicLDA(self,post):
     post2 = fpt.post_adapter(post, self.bigram_mdl)
     post3 = self.dictionary.doc2bow(post2)
     return self.ldamodel.get_document_topics(post3)
 
+  #funzione che stampa come una stringa la lista di parole associate al topic con probabilità più alta
   def result_TopicLDAMax(self,post):
     result = self.result_TopicLDA(post)
     massimo = max(result, key=lambda x: x[1])
     return self.ldamodel.print_topic(massimo, topn=5)
   
-  def print_topics(self,num_words=5):
+  #funzione che stampa tutti i topic con la lista delle parole associate (10 parole per topic)
+  def print_topics(self,num_words=10):
     return self.ldamodel.print_topics(num_words=num_words)
   
+  #funzione che stampa un grafico interattivo dei topic ottenuti con il modello LDA
   def grafico_LDA(self):
+    #abilita la visualizzazione automatica D3 dei dati del modello preparato nel notebook IPython. 
     pyLDAvis.enable_notebook()
+    #trasforma e prepara i dati di un modello LDA per la visualizzazione
     lda_display = gensimvis.prepare(self.ldamodel, self.corpus_tfidf, self.dictionary, sort_topics=False)
+    #visualizza il plot in un notebook IPython
     pyLDAvis.display(lda_display)
 
 #-----------HDP----------#
@@ -113,6 +126,8 @@ class HDPModel:
   ----------
   corpus : list of str
   """
+  #Funzione che presi in input i dati per effettuare l'HDP
+  #procede con la pulizia del corpus ed effettua le stesse operazioni fatte per il modello LDA
   def __init__(self,corpus):
     post,self.bigram_mdl=fpt.clear_corpus(corpus)
     self.dictionary = gensim.corpora.Dictionary(post)
@@ -121,15 +136,18 @@ class HDPModel:
     corpus_tfidf = tfidf[corpus2]
     self.hdpmodel = gensim.models.HdpModel(corpus_tfidf, self.dictionary)
 
+  ####(//non riesco a trovare la funzione get_document_topics per HDP, c'è solo get_topics(), forse un errore con LDA?)
   def result_TopicHDP(self,post):
     post2 = fpt.post_adapter(post, self.bigram_mdl)
     post3 = self.dictionary.doc2bow(post2)
     return self.hdpmodel.get_document_topics(post3)
   
+  #funzione che stampa come una stringa la lista di parole associate al topic con probabilità più alta
   def result_TopicHDPMax(self,post):
     result = self.result_TopicHDP(post)
     massimo = max(result, key=lambda x: x[1])
     return self.hdpmodel.print_topic(massimo, topn=5)
   
+  #funzione che stampa tutti i topic rilevati con la lista delle parole associate 
   def print_topics(self,num_words=5):
     return self.hdpmodel.print_topics(num_words=num_words)
