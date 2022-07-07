@@ -1,14 +1,10 @@
-"""Funzioni per la pulizia del testo"""
-
 import re
 import gensim
-from nltk.stem import WordNetLemmatizer
-from numpy import spacing
 import funzioni_per_elaborazione_linguaggio as fel
-from collections import Counter
 import spacy
 ENGLISH_STOP_WORDS=spacy.load('en_core_web_sm').Defaults.stop_words
 
+#Funzione per rimuovere link e menzioni dal testo
 def remove_link_menzione(doc):
     pattern_link="https\S+"
     pattern_menzione="@\S+"
@@ -16,7 +12,9 @@ def remove_link_menzione(doc):
     doc=re.sub(pattern_menzione," ",doc)
     return doc
 
-def find_and_merge_not(lista):#unisce not parola --> not_parola
+#Funzione che unisce not con una parola che segue
+#Esempio "not","good" -> "not_good"
+def find_and_merge_not(lista):
     tmp=''
     parole_esaminate=[]
     for parole in lista:
@@ -29,6 +27,13 @@ def find_and_merge_not(lista):#unisce not parola --> not_parola
             parole_esaminate.append(parole)
     return parole_esaminate
 
+#Funzione che pulisce il corpus di una lista di post presi in input
+#considerando le categorie di parole più utili per i nostri scopi
+#eliminando stop word, tokenizzando il testo, creando bigrammi
+#Utilizzato per l'addestramento dei modelli
+#dove non era necessaria la conversione delle emoji perchè non aggiungeva 
+# informazione utile per la rilevazione del topic e poichè nel dataset delle emotion non erano presenti
+#e la traduzione perchè ogni post era in inglese
 def clear_corpus(tweets):#return bigram
     allowed_postags=["NOUN", "ADJ", "VERB", "ADV","PROPN","PART"]
     nlp = spacy.load("en_core_web_sm", disable=["parser", "ner"])
@@ -48,6 +53,12 @@ def clear_corpus(tweets):#return bigram
 
     return post,bigram_mdl
 
+#Funzione per la pulizia di un post in input
+#Come clear_corpus
+#In aggiunta abbiamo la conversione delle emoji e la traduzione
+#Se passato un vettorizzatore il posto viene vettorizzato
+#Utilizzato per i commenti di un post dove ogni emoji può dare informazione in più
+#e dove è necessaria una traduzione
 def post_adapter(post,bigram_mdl,vectorizer=None,traduci=False):
     allowed_postags=["NOUN", "ADJ", "VERB", "ADV","PROPN","PART"]
     nlp = spacy.load("en_core_web_sm", disable=["parser", "ner"])
